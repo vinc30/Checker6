@@ -1,0 +1,84 @@
+package checker6;
+
+
+public class CheckerBoard {
+    private static final int BOARD_SIZE = 6;
+    private static final Position[] INITIAL_POSITIONS;
+    
+    public static int getBoardSize() {
+        return BOARD_SIZE;
+    }
+
+    public static Position[] getInitialPositions() {
+        return INITIAL_POSITIONS;
+    }
+
+    private Piece[][] board;
+
+    public CheckerBoard() {
+        board = new Piece[BOARD_SIZE][BOARD_SIZE];
+        for (int i = 0; i < BOARD_SIZE; i ++) {
+            for (int j = 0; j < BOARD_SIZE; j ++) {
+                board[i][j] = null;
+            }
+        }
+    }
+    static {
+        INITIAL_POSITIONS = Position[2][BOARD_SIZE]();
+        INITIAL_POSITIONS[0][0] = new Position(0,1);
+        INITIAL_POSITIONS[0][1] = new Position(0,3);
+        INITIAL_POSITIONS[0][2] = new Position(0,5);
+        INITIAL_POSITIONS[0][3] = new Position(1,0);
+        INITIAL_POSITIONS[0][4] = new Position(1,2);
+        INITIAL_POSITIONS[0][5] = new Position(1,4);
+        
+        INITIAL_POSITIONS[1][0] = new Position(4,1);
+        INITIAL_POSITIONS[1][1] = new Position(4,3);
+        INITIAL_POSITIONS[1][2] = new Position(4,5);
+        INITIAL_POSITIONS[1][3] = new Position(5,0);
+        INITIAL_POSITIONS[1][4] = new Position(5,2);
+        INITIAL_POSITIONS[1][5] = new Position(5,4);
+    }
+    // board initialization
+    // public updateStatus(Player player) {}
+    public void putPiece(Piece piece) {
+        Position position = piece.getPosition();
+        if (isPositionEmpty(position)) {
+            board[position.getX()][position.getY()] = piece;
+        } else {
+            throw new IllegalArgumentException("putPiece(): Position taken");
+        }
+    }
+    public Piece getPieceByPosition(Position position) {
+        return board[position.getX()][position.getY()];
+    }
+
+    public boolean isPositionEmpty(Position position) {
+        return board[position.getX()][position.getY()] == null;
+    }
+    public void movePiece(Piece piece, Position position) {
+        if (isPositionEmpty(position)) {
+            
+        } else {
+            throw new IllegalArgumentException("movePiece(): Position already taken.");
+        }
+    }
+    // public Position[] getValidMoves(Piece piece) {}
+    public void showBoard() {
+        StringBuilder boardStatus = new StringBuilder(260);
+        boardStatus.append("_________________________\n");
+        for (int i = 0; i < BOARD_SIZE; i ++) {
+            boardStatus.append("|");
+            for (int j = 0; j < BOARD_SIZE; j ++) {
+                boardStatus.append((board[i][j] == null ? "   " : (" " + board[i][j].toString() + " ")) + "|");
+            }
+            boardStatus.append("\n");
+            if (i != BOARD_SIZE - 1) {
+                boardStatus.append("|---+---+---+---+---+---|\n");
+            }
+        }
+        boardStatus.append("-------------------------\n");
+        System.out.printf(boardStatus.toString());
+    }
+
+}
