@@ -3,13 +3,13 @@ package checker6;
 
 public class CheckerBoard {
     private static final int BOARD_SIZE = 6;
-    private static final Position[] INITIAL_POSITIONS;
+    private static final Position[][] INITIAL_POSITIONS;
     
     public static int getBoardSize() {
         return BOARD_SIZE;
     }
 
-    public static Position[] getInitialPositions() {
+    public static Position[][] getInitialPositions() {
         return INITIAL_POSITIONS;
     }
 
@@ -24,7 +24,7 @@ public class CheckerBoard {
         }
     }
     static {
-        INITIAL_POSITIONS = Position[2][BOARD_SIZE]();
+        INITIAL_POSITIONS = new Position[2][BOARD_SIZE];
         INITIAL_POSITIONS[0][0] = new Position(0,1);
         INITIAL_POSITIONS[0][1] = new Position(0,3);
         INITIAL_POSITIONS[0][2] = new Position(0,5);
@@ -49,6 +49,13 @@ public class CheckerBoard {
             throw new IllegalArgumentException("putPiece(): Position taken");
         }
     }
+    
+    public void putPiece(Piece... pieces) {
+        for (Piece piece : pieces) {
+            putPiece(piece);
+        }
+    }
+    
     public Piece getPieceByPosition(Position position) {
         return board[position.getX()][position.getY()];
     }
@@ -56,21 +63,27 @@ public class CheckerBoard {
     public boolean isPositionEmpty(Position position) {
         return board[position.getX()][position.getY()] == null;
     }
-    public void movePiece(Piece piece, Position position) {
-        if (isPositionEmpty(position)) {
-            
+    public void movePiece(Piece piece, Position oldPosition) {
+        if (isPositionEmpty(piece.getPosition())) {
+            board[oldPosition.getX()][oldPosition.getY()] = null;
+            board[piece.getPosition().getX()][piece.getPosition().getY()] = piece;
         } else {
             throw new IllegalArgumentException("movePiece(): Position already taken.");
         }
     }
-    // public Position[] getValidMoves(Piece piece) {}
-    public void showBoard() {
+    
+    public boolean isLegalPosition(Position position) {
+        return position.getX() >= 0 && position.getX() < BOARD_SIZE &&
+            position.getY() >= 0 && position.getY() < BOARD_SIZE;
+    }
+
+    @Override public String toString() {
         StringBuilder boardStatus = new StringBuilder(260);
-        boardStatus.append("_________________________\n");
+        boardStatus.append("-------------------------\n");
         for (int i = 0; i < BOARD_SIZE; i ++) {
             boardStatus.append("|");
             for (int j = 0; j < BOARD_SIZE; j ++) {
-                boardStatus.append((board[i][j] == null ? "   " : (" " + board[i][j].toString() + " ")) + "|");
+                boardStatus.append((board[i][j] == null ? "   " : String.format("%d%s ", board[i][j].getSerialNum(), board[i][j].toString())) + "|");
             }
             boardStatus.append("\n");
             if (i != BOARD_SIZE - 1) {
@@ -78,7 +91,7 @@ public class CheckerBoard {
             }
         }
         boardStatus.append("-------------------------\n");
-        System.out.printf(boardStatus.toString());
+        return boardStatus.toString();
     }
 
 }
