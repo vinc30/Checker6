@@ -1,7 +1,11 @@
 package checker6;
 
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 public class PlayChecker {
     
     public static void main(String[] args) {
@@ -12,7 +16,7 @@ public class PlayChecker {
         while (!game.gameEnded()) {
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.LIGHT)) > 0) {
                 System.out.printf(game.getBoard().toString());
-.                System.out.printf("Move piece to position: ");
+                System.out.printf("Move piece to position: ");
                 game.move(game.getPlayer(Color.LIGHT));
             } 
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.DARK)) > 0) {
@@ -57,33 +61,43 @@ public class PlayChecker {
     
     public Position getValidPosition(Player player, int pieceNum) {
         
-        Scanner scan = new Scanner(System.in);
+        // Scanner scan = new Scanner(System.in);
+        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         boolean validPos = false;
         Position position = null;
-        while (validPos) {
-            int x = scan.nextInt();
-            int y = scan.nextInt();
-            if (isLegalMove(player.getPieces(pieceNum), new Position(x, y))) {
-                position = new Position(x, y);
-                validPos = true;
+        while (!validPos) {
+            try {
+                int x = Integer.parseInt(input.readLine());
+                int y = Integer.parseInt(input.readLine());
+                if (isLegalMove(player.getPieces(pieceNum), new Position(x, y))) {
+                    position = new Position(x, y);
+                    validPos = true;
+                }
+            } catch (IOException ioe) {
+                System.out.printf(ioe.getMessage());
             }
         }
-        scan.close();
+        // scan.close();
         return position;
     }
 
     public int getValidPieceNum(Player player) {
         
-        Scanner scan = new Scanner(System.in);
+        // Scanner scan = new Scanner(System.in);
+        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         boolean validNum = false;
         int serialNum = -1;
-        while (validNum) {
-            serialNum = scan.nextInt();
-            if (serialNum > 0 && serialNum < player.getPieces().length && player.getPieces(serialNum) != null) {
-                validNum = true;
+        while (!validNum) {
+            try {
+                serialNum = Integer.parseInt(input.readLine());
+                if (serialNum > 0 && serialNum < player.getPieces().length && player.getPieces(serialNum) != null) {
+                    validNum = true;
+                }
+            } catch (IOException ioe) {
+                System.out.printf(ioe.getMessage());
             }
         }
-        scan.close();
+        // scan.close();
         return serialNum;
     }
 

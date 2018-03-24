@@ -38,4 +38,8 @@ public class Position {
         result = 31 * result + getY();
         return result;
     }
+
+    @Override public String toString() {
+        return String.format("(%d,%d)", getX(), getY());
+    }
 }
