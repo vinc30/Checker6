@@ -22,6 +22,17 @@ public class Player {
         return holdingPiece;
     }
 
+    public Piece getPieces(Position position) {
+        Piece piece = new Piece();
+        for (Piece p : holdingPiece) {
+            if (p != null && p.getPosition().equals(position)) {
+                piece = p;
+                break;
+            }
+        }
+        return piece;
+    }
+
     public Piece getPieces(int idx) {
         return holdingPiece[idx];
     }
@@ -30,6 +41,7 @@ public class Player {
     }
     public void gotEaten(int pieceNum) {
         if (holdingPiece[pieceNum] != null) {
+            board.eatPiece(holdingPiece[pieceNum]);
             holdingPiece[pieceNum] = null;
             remainingPieces --;
         } else {

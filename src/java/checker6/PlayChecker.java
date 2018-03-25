@@ -16,12 +16,10 @@ public class PlayChecker {
         while (!game.gameEnded()) {
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.LIGHT)) > 0) {
                 System.out.printf(game.getBoard().toString());
-                System.out.printf("Move piece to position: ");
                 game.move(game.getPlayer(Color.LIGHT));
             } 
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.DARK)) > 0) {
                 System.out.printf(game.getBoard().toString());
-                System.out.printf("Move piece to position: ");
                 game.move(game.getPlayer(Color.DARK));
             }
         }
@@ -53,52 +51,71 @@ public class PlayChecker {
     }
 
     public void move(Player player) {
-        int pieceNum = getValidPieceNum(player);
-        // check targetPosition valid
-        Position newPosition = getValidPosition(player, pieceNum);
-        player.updatePiece(pieceNum, newPosition);
+        
+        UserInput input = getValidInput(player);
+        if (input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.LEFTJUMP)) ||
+                input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.RIGHTJUMP))) {
+            Piece eatenPiece = board.getPieceByPosition(new Position((player.getPieces()[input.getSerialNum()].getPosition().getX() + input.getPosition().getX()) / 2,
+                    (player.getPieces()[input.getSerialNum()].getPosition().getY() + input.getPosition().getY()) / 2));
+            Player rival = getRival(player);
+            rival.gotEaten(eatenPiece.getSerialNum());
+        }
+        player.updatePiece(input.getSerialNum(), input.getPosition());
     }
     
-    public Position getValidPosition(Player player, int pieceNum) {
-        
-        // Scanner scan = new Scanner(System.in);
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        boolean validPos = false;
-        Position position = null;
-        while (!validPos) {
-            try {
-                int x = Integer.parseInt(input.readLine());
-                int y = Integer.parseInt(input.readLine());
-                if (isLegalMove(player.getPieces(pieceNum), new Position(x, y))) {
-                    position = new Position(x, y);
-                    validPos = true;
-                }
-            } catch (IOException ioe) {
-                System.out.printf(ioe.getMessage());
-            }
-        }
-        // scan.close();
-        return position;
-    }
-
-    public int getValidPieceNum(Player player) {
-        
-        // Scanner scan = new Scanner(System.in);
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+    public UserInput getValidInput(Player player) {
         boolean validNum = false;
+        boolean validPos = false;
         int serialNum = -1;
-        while (!validNum) {
+        Position newPosition = new Position();
+        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+
+        while (!validNum || !validPos) {
+            if (!validNum && !validPos) {
+                System.out.printf("%s player's move, pick a piece: ", player.getColor());
+            } else if (validNum) {
+                System.out.printf("%s player's move, assign piece #%d to: ", player.getColor(), serialNum);
+            }
             try {
-                serialNum = Integer.parseInt(input.readLine());
-                if (serialNum > 0 && serialNum < player.getPieces().length && player.getPieces(serialNum) != null) {
-                    validNum = true;
+                String inputString = input.readLine();
+                if (Utility.isInteger(inputString)) {
+                    serialNum = Integer.parseInt(inputString);
+                    if (serialNum >= 0 && serialNum < player.getPieces().length && player.getPieces(serialNum) != null) {
+                        validNum = true;
+                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
+
+                    } else {
+                        System.out.printf("Invalid index number, please pick another number%n");
+                    }
+                } else if (validNum == true) {
+                    if (inputString.matches("^\\(\\d+,\\d+\\)$") || 
+                            inputString.matches("^\\d+,\\d+$")) {
+                        if (Utility.isInteger(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[0]) && Utility.isInteger(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[1])) {
+                            int x = Integer.parseInt(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[0]);
+                            int y = Integer.parseInt(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[1]);
+                            if (isLegalMove(player.getPieces(serialNum), new Position(x, y))) {
+                                newPosition = new Position(x, y);
+                                validPos = true;
+                            } else {
+                                System.out.printf("Illegal move: %s\n", inputString);
+                            }
+                        }
+                    } else {
+                        System.out.printf("invalid input: %s%n", inputString);
+                    }
+                } else{
+                    System.out.printf("Invalid input: %s%n", inputString);
                 }
             } catch (IOException ioe) {
-                System.out.printf(ioe.getMessage());
+                System.out.printf("OMG it's an IOException(read input): %s%n", ioe.getMessage());
             }
         }
-        // scan.close();
-        return serialNum;
+        /*try {
+            input.close();
+        } catch (IOException ioe) {
+            System.out.printf("OMG it's an IOException(close input): %s%n", ioe.getMessage());
+        }*/
+        return new UserInput(serialNum, newPosition);
     }
 
     public boolean gameEnded() {
@@ -172,5 +189,9 @@ public class PlayChecker {
     
     public Player getPlayer(Color color) {
         return color == Color.LIGHT ? playerLight : playerDark;
+    }
+
+    public Player getRival(Player player) {
+        return player.getColor() == Color.LIGHT ? getPlayer(Color.DARK) : getPlayer(Color.LIGHT);
     }
 }

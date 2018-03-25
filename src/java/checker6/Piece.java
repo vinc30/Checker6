@@ -11,6 +11,13 @@ public class Piece {
         this.player = player;
         this.serialNum = serialNum;
     }
+
+    public Piece() {
+        this.position = null;
+        this.player = null;
+        this.serialNum = -1;
+    }
+
     public Position getPosition() {
         return position;
     }
@@ -43,7 +50,7 @@ public class Piece {
         }
     }
     @Override public String toString() {
-        return player.getColor() == Color.LIGHT ? "O" : "X";
+        return player.getColor() == Color.LIGHT ? "@" : "X";
     }
 }
 

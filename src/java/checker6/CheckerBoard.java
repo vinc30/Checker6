@@ -46,7 +46,7 @@ public class CheckerBoard {
         if (isPositionEmpty(position)) {
             board[position.getX()][position.getY()] = piece;
         } else {
-            throw new IllegalArgumentException("putPiece(): Position taken");
+            throw new IllegalArgumentException("CheckerBoard.putPiece(): Position taken");
         }
     }
     
@@ -68,29 +68,49 @@ public class CheckerBoard {
             board[oldPosition.getX()][oldPosition.getY()] = null;
             board[piece.getPosition().getX()][piece.getPosition().getY()] = piece;
         } else {
-            throw new IllegalArgumentException("movePiece(): Position already taken.");
+            throw new IllegalArgumentException("CheckerBoard.movePiece(): Position already taken");
         }
     }
-    
+
+    public void eatPiece(Piece piece) {
+        if (!isPositionEmpty(piece.getPosition())) {
+            board[piece.getPosition().getX()][piece.getPosition().getY()] = null;
+        } else {
+            throw new IllegalArgumentException("CheckerBoard.eatPiece(): Phantom piece");
+        }
+    }
+
     public boolean isLegalPosition(Position position) {
         return position.getX() >= 0 && position.getX() < BOARD_SIZE &&
             position.getY() >= 0 && position.getY() < BOARD_SIZE;
     }
 
     @Override public String toString() {
-        StringBuilder boardStatus = new StringBuilder(260);
-        boardStatus.append("-------------------------\n");
+        StringBuilder boardStatus = new StringBuilder(360);
+        boardStatus.append("   0   1   2   3   4   5  \n");
+        boardStatus.append(" -------------------------\n");
         for (int i = 0; i < BOARD_SIZE; i ++) {
-            boardStatus.append("|");
+            boardStatus.append(String.format("%d|", i));
             for (int j = 0; j < BOARD_SIZE; j ++) {
                 boardStatus.append((board[i][j] == null ? "   " : String.format("%d%s ", board[i][j].getSerialNum(), board[i][j].toString())) + "|");
             }
             boardStatus.append("\n");
             if (i != BOARD_SIZE - 1) {
-                boardStatus.append("|---+---+---+---+---+---|\n");
+                boardStatus.append(" |---+---+---+---+---+---|\n");
             }
         }
-        boardStatus.append("-------------------------\n");
+        boardStatus.append(" -------------------------\n");
+        return boardStatus.toString();
+    }
+
+    public String toString(Position position, Player player) {
+        StringBuilder boardStatus = new StringBuilder(toString());
+        int idx = Utility.positionToIndex(position);
+        if (' ' == boardStatus.charAt(idx)) {
+            boardStatus.setCharAt(idx, (player.getColor() == Color.LIGHT ? 'v' : '^'));
+        } else {
+            throw new IllegalArgumentException("CheckerBoard.toString(): Invalid argument");
+        }
         return boardStatus.toString();
     }
 
