@@ -1,7 +1,6 @@
 package checker6;
 
 import java.io.IOException;
-import java.util.Scanner;
 import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -9,24 +8,24 @@ import java.io.InputStreamReader;
 public class PlayChecker {
     
     public static void main(String[] args) {
-        // set up board and players
+
         PlayChecker game = new PlayChecker();
 
-        // Start playing
+        // to-do: Let user choose color
+        Player firstPlayer = game.getPlayer(Color.LIGHT);
+        Player secondPlayer = game.getPlayer(Color.DARK);
+
         while (!game.gameEnded()) {
-            if (game.getNumberOfLegalMoves(game.getPlayer(Color.LIGHT)) > 0) {
-                // System.out.printf(game.getBoard().toString());
-                game.move(game.getPlayer(Color.LIGHT));
+            if (game.getNumberOfLegalMoves(firstPlayer) > 0) {
+                game.move(firstPlayer);
             } 
-            if (game.getNumberOfLegalMoves(game.getPlayer(Color.DARK)) > 0) {
-                // System.out.printf(game.getBoard().toString());
-                game.move(game.getPlayer(Color.DARK));
+            if (game.getNumberOfLegalMoves(secondPlayer) > 0) {
+                game.move(secondPlayer);
             }
         }
 
-        System.out.printf(game.getBoard().toString());
+        System.out.print(game.getBoard().toString());
         System.out.printf("Winner: %s\n", game.getResult(game));
-        // System.out.printf(board.toString());
     }
     
     private CheckerBoard board;
@@ -41,7 +40,7 @@ public class PlayChecker {
         board.putPiece(playerDark.getPieces());
         
     }
-    
+
     public String getResult(PlayChecker game) {
         if (playerDark.getRemainingPieces() == playerLight.getRemainingPieces()) {
             return "DRAW";
@@ -63,29 +62,29 @@ public class PlayChecker {
         player.updatePiece(input.getSerialNum(), input.getPosition());
     }
     
-    public UserInput getValidInput(Player player) {
+    private UserInput getValidInput(Player player) {
         boolean validNum = false;
         boolean validPos = false;
         int serialNum = -1;
         Position newPosition = new Position();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        System.out.printf(player.getBoard().toString());
+        System.out.print(player.getBoard().toString());
 
         while (!validNum || !validPos) {
-            if (!validNum && !validPos) {
+            if (!validNum) {
                 // System.out.printf(player.getBoard().toString());
                 System.out.printf("%s player's move, pick a piece: ", player.getColor());
-            } else if (validNum) {
+            } else {
                 // System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
                 System.out.printf("%s player's move, assign piece #%d to: ", player.getColor(), serialNum);
             }
             try {
                 String inputString = input.readLine();
                 if (inputString.trim().equals("*")) {
-                    if (validNum == true) {
+                    if (validNum) {
                         System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
                     } else {
-                        System.out.printf(player.getBoard().toString());
+                        System.out.print(player.getBoard().toString());
                     }
                 } else if (Utility.isInteger(inputString)) {
                     int inputInt = Integer.parseInt(inputString);
@@ -98,7 +97,7 @@ public class PlayChecker {
 
                         System.out.printf("Invalid index number, please pick another number%n");
                     }
-                } else if (validNum == true) {
+                } else if (validNum) {
                     if (inputString.matches("^\\(\\d+,\\d+\\)$") || 
                             inputString.matches("^\\d+,\\d+$")) {
                         if (Utility.isInteger(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[0]) && Utility.isInteger(inputString.replaceAll("\\(", "").replaceAll("\\)", "").split(",")[1])) {
@@ -121,11 +120,6 @@ public class PlayChecker {
                 System.out.printf("OMG it's an IOException(read input): %s%n", ioe.getMessage());
             }
         }
-        /*try {
-            input.close();
-        } catch (IOException ioe) {
-            System.out.printf("OMG it's an IOException(close input): %s%n", ioe.getMessage());
-        }*/
         return new UserInput(serialNum, newPosition);
     }
 
@@ -207,9 +201,4 @@ public class PlayChecker {
     public Player getPlayer(Color color) {
         return color == Color.LIGHT ? playerLight : playerDark;
     }
-    /*
-    public Player getRival(Player player) {
-        return player.getColor() == Color.LIGHT ? getPlayer(Color.DARK) : getPlayer(Color.LIGHT);
-    }
-    */
 }
