@@ -25,7 +25,7 @@ public class PlayChecker {
         }
 
         System.out.print(game.getBoard().toString());
-        System.out.printf("Winner: %s\n", game.getResult(game));
+        System.out.printf("Winner: %s\n", game.getResult());
     }
     
     private CheckerBoard board;
@@ -41,7 +41,7 @@ public class PlayChecker {
         
     }
 
-    public String getResult(PlayChecker game) {
+    public String getResult() {
         if (playerDark.getRemainingPieces() == playerLight.getRemainingPieces()) {
             return "DRAW";
         }
@@ -56,7 +56,6 @@ public class PlayChecker {
                 input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.RIGHTJUMP))) {
             Piece eatenPiece = board.getPieceByPosition(new Position((player.getPieces()[input.getSerialNum()].getPosition().getX() + input.getPosition().getX()) / 2,
                     (player.getPieces()[input.getSerialNum()].getPosition().getY() + input.getPosition().getY()) / 2));
-            // Player rival = getRival(player);
             eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
         }
         player.updatePiece(input.getSerialNum(), input.getPosition());
@@ -72,10 +71,8 @@ public class PlayChecker {
 
         while (!validNum || !validPos) {
             if (!validNum) {
-                // System.out.printf(player.getBoard().toString());
                 System.out.printf("%s player's move, pick a piece: ", player.getColor());
             } else {
-                // System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
                 System.out.printf("%s player's move, assign piece #%d to: ", player.getColor(), serialNum);
             }
             try {
@@ -148,7 +145,7 @@ public class PlayChecker {
 
     public Position[] getLegalMoves(Piece piece) {
         boolean forceJump = false;
-        ArrayList<Position> legalMoves = new ArrayList<Position>();
+        ArrayList<Position> legalMoves = new ArrayList<>();
         if (isLegalMove(piece, piece.getPositionAfterMove(Move.LEFTJUMP))) {
             legalMoves.add(piece.getPositionAfterMove(Move.LEFTJUMP));
             forceJump = true;

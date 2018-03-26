@@ -39,8 +39,7 @@ public class CheckerBoard {
         INITIAL_POSITIONS[1][4] = new Position(5,2);
         INITIAL_POSITIONS[1][5] = new Position(5,4);
     }
-    // board initialization
-    // public updateStatus(Player player) {}
+
     public void putPiece(Piece piece) {
         Position position = piece.getPosition();
         if (isPositionEmpty(position)) {
