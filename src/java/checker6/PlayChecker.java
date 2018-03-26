@@ -15,11 +15,11 @@ public class PlayChecker {
         // Start playing
         while (!game.gameEnded()) {
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.LIGHT)) > 0) {
-                System.out.printf(game.getBoard().toString());
+                // System.out.printf(game.getBoard().toString());
                 game.move(game.getPlayer(Color.LIGHT));
             } 
             if (game.getNumberOfLegalMoves(game.getPlayer(Color.DARK)) > 0) {
-                System.out.printf(game.getBoard().toString());
+                // System.out.printf(game.getBoard().toString());
                 game.move(game.getPlayer(Color.DARK));
             }
         }
@@ -43,10 +43,10 @@ public class PlayChecker {
     }
     
     public String getResult(PlayChecker game) {
-        if (game.getNumberOfLegalMoves(playerDark) == game.getNumberOfLegalMoves(playerLight)) {
+        if (playerDark.getRemainingPieces() == playerLight.getRemainingPieces()) {
             return "DRAW";
         }
-        return game.getNumberOfLegalMoves(playerDark) > game.getNumberOfLegalMoves(playerLight) ?
+        return playerDark.getRemainingPieces() > playerLight.getRemainingPieces() ?
             "DARK" : "LIGHT";
     }
 
@@ -57,8 +57,8 @@ public class PlayChecker {
                 input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.RIGHTJUMP))) {
             Piece eatenPiece = board.getPieceByPosition(new Position((player.getPieces()[input.getSerialNum()].getPosition().getX() + input.getPosition().getX()) / 2,
                     (player.getPieces()[input.getSerialNum()].getPosition().getY() + input.getPosition().getY()) / 2));
-            Player rival = getRival(player);
-            rival.gotEaten(eatenPiece.getSerialNum());
+            // Player rival = getRival(player);
+            eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
         }
         player.updatePiece(input.getSerialNum(), input.getPosition());
     }
@@ -69,22 +69,33 @@ public class PlayChecker {
         int serialNum = -1;
         Position newPosition = new Position();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+        System.out.printf(player.getBoard().toString());
 
         while (!validNum || !validPos) {
             if (!validNum && !validPos) {
+                // System.out.printf(player.getBoard().toString());
                 System.out.printf("%s player's move, pick a piece: ", player.getColor());
             } else if (validNum) {
+                // System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
                 System.out.printf("%s player's move, assign piece #%d to: ", player.getColor(), serialNum);
             }
             try {
                 String inputString = input.readLine();
-                if (Utility.isInteger(inputString)) {
-                    serialNum = Integer.parseInt(inputString);
-                    if (serialNum >= 0 && serialNum < player.getPieces().length && player.getPieces(serialNum) != null) {
+                if (inputString.trim().equals("*")) {
+                    if (validNum == true) {
+                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
+                    } else {
+                        System.out.printf(player.getBoard().toString());
+                    }
+                } else if (Utility.isInteger(inputString)) {
+                    int inputInt = Integer.parseInt(inputString);
+                    if (inputInt >= 0 && inputInt < player.getPieces().length && player.getPieces(inputInt) != null) {
+                        serialNum = inputInt;
                         validNum = true;
                         System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
 
                     } else {
+
                         System.out.printf("Invalid index number, please pick another number%n");
                     }
                 } else if (validNum == true) {
@@ -120,7 +131,7 @@ public class PlayChecker {
 
     public boolean gameEnded() {
         return playerLight.getRemainingPieces() == 0 || playerDark.getRemainingPieces() == 0 
-            || getNumberOfLegalMoves() == 0;
+            || getNumberOfLegalMoves(playerDark) == 0 || getNumberOfLegalMoves(playerLight) == 0;
     }
 
     public int getNumberOfLegalMoves(Player player) {
@@ -136,10 +147,6 @@ public class PlayChecker {
         return totalLegalMoves;
     }
 
-    public int getNumberOfLegalMoves() {
-        return getNumberOfLegalMoves(playerLight) + getNumberOfLegalMoves(playerDark);
-    }
-    
     public boolean isJump(Piece piece, Position newPosition) {
         return piece.getPositionAfterMove(Move.LEFTJUMP).equals(newPosition) ||
             piece.getPositionAfterMove(Move.RIGHTJUMP).equals(newPosition);
@@ -173,11 +180,21 @@ public class PlayChecker {
     public boolean isLegalMove(Piece piece, Position newPosition) {
         boolean legal = false;
         if (board.isLegalPosition(newPosition) && board.isPositionEmpty(newPosition)) {
-            if (newPosition.equals(piece.getPositionAfterMove(Move.LEFT)) || 
+            if (newPosition.equals(piece.getPositionAfterMove(Move.LEFT)) ||
                     newPosition.equals(piece.getPositionAfterMove(Move.RIGHT)) ||
                         newPosition.equals(piece.getPositionAfterMove(Move.LEFTJUMP)) ||
                             newPosition.equals(piece.getPositionAfterMove(Move.RIGHTJUMP))) {
-                legal = true;
+                if (isJump(piece, newPosition)) {
+                    Piece eatenPiece = board.getPieceByPosition(new Position((piece.getPosition().getX() + newPosition.getX()) / 2,
+                            (piece.getPosition().getY() + newPosition.getY()) / 2));
+                    if (eatenPiece != null) {
+                        if (eatenPiece.getPlayer().getColor() != piece.getPlayer().getColor()) {
+                            legal = true;
+                        }
+                    }
+                } else {
+                    legal = true;
+                }
             }
         }
         return legal;
@@ -190,8 +207,9 @@ public class PlayChecker {
     public Player getPlayer(Color color) {
         return color == Color.LIGHT ? playerLight : playerDark;
     }
-
+    /*
     public Player getRival(Player player) {
         return player.getColor() == Color.LIGHT ? getPlayer(Color.DARK) : getPlayer(Color.LIGHT);
     }
+    */
 }
