@@ -101,14 +101,27 @@ public class CheckerBoard {
         boardStatus.append(" -------------------------\n");
         return boardStatus.toString();
     }
+    public String toString(String boardStatusString, Position position) {
 
-    public String toString(Position position, Player player) {
-        StringBuilder boardStatus = new StringBuilder(toString());
+        StringBuilder boardStatus = new StringBuilder(boardStatusString);
         int idx = Utility.positionToIndex(position);
-        if (' ' == boardStatus.charAt(idx)) {
+        if (getPieceByPosition(position) != null) {
+            Player player = getPieceByPosition(position).getPlayer();
             boardStatus.setCharAt(idx, (player.getColor() == Color.LIGHT ? 'v' : '^'));
         } else {
-            throw new IllegalArgumentException("CheckerBoard.toString(): Invalid argument");
+            boardStatus.setCharAt(idx, '#');
+        }
+        return boardStatus.toString();
+    }
+
+    public String toString(Position position) {
+         return toString(toString(), position);
+    }
+
+    public String toString(Position ... positions) {
+        StringBuilder boardStatus = new StringBuilder(toString());
+        for (Position position : positions) {
+            boardStatus = new StringBuilder(toString(boardStatus.toString(), position));
         }
         return boardStatus.toString();
     }

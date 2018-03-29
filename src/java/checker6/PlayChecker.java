@@ -77,18 +77,41 @@ public class PlayChecker {
             }
             try {
                 String inputString = input.readLine();
-                if (inputString.trim().equals("*")) {
+                if (inputString.trim().equals("*")) {   // Show current board
                     if (validNum) {
-                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
+                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition()));
                     } else {
                         System.out.print(player.getBoard().toString());
                     }
-                } else if (Utility.isInteger(inputString)) {
+                } else if (inputString.trim().equals("?")) { // Show available steps
+                    if (validNum) {
+                        Position[] legalMoves = getLegalMoves(player.getPieces(serialNum));
+                        if (legalMoves != null) {
+                            System.out.printf(player.getBoard().toString(player.getBoard().toString(legalMoves), player.getPieces(serialNum).getPosition()));
+                        } else {
+                            System.out.print(player.getBoard().toString(player.getPieces(serialNum).getPosition()));
+                        }
+                    } else {
+                        StringBuilder stringBuilder = new StringBuilder();
+                        for (Piece piece : player.getPieces()) {
+                            if (piece != null) {
+                                Position[] legalMoves = getLegalMoves(piece);
+                                if (legalMoves != null) {
+                                    for (Position legalMove : legalMoves) {
+                                        stringBuilder.append(legalMove.toString() + " ");
+                                    }
+                                    stringBuilder.append(",");
+                                }
+                            }
+                        }
+                        System.out.printf("legal moves: \n %s", stringBuilder.toString());
+                    }
+                }else if (Utility.isInteger(inputString)) {
                     int inputInt = Integer.parseInt(inputString);
                     if (inputInt >= 0 && inputInt < player.getPieces().length && player.getPieces(inputInt) != null) {
                         serialNum = inputInt;
                         validNum = true;
-                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition(), player));
+                        System.out.printf("%s", getBoard().toString(player.getPieces(serialNum).getPosition()));
 
                     } else {
 
@@ -138,6 +161,21 @@ public class PlayChecker {
         return totalLegalMoves;
     }
 
+    public boolean forceJump(Player player) {
+
+        boolean forced = false;
+        for (Piece piece : player.getPieces()) {
+            if (piece != null) {
+                if (isPossibleMove(piece, piece.getPositionAfterMove(Move.LEFTJUMP)) ||
+                        isPossibleMove(piece, piece.getPositionAfterMove(Move.RIGHTJUMP))) {
+                    forced = true;
+                    return forced;
+                }
+            }
+        }
+        return forced;
+    }
+
     public boolean isJump(Piece piece, Position newPosition) {
         return piece.getPositionAfterMove(Move.LEFTJUMP).equals(newPosition) ||
             piece.getPositionAfterMove(Move.RIGHTJUMP).equals(newPosition);
@@ -156,36 +194,45 @@ public class PlayChecker {
         }
         if (forceJump) {
             return legalMoves.toArray(new Position[legalMoves.size()]);
-        } 
-        
+        }
+
         if (isLegalMove(piece, piece.getPositionAfterMove(Move.LEFT))) {
             legalMoves.add(piece.getPositionAfterMove(Move.LEFT));
         }
         if (isLegalMove(piece, piece.getPositionAfterMove(Move.RIGHT))) {
             legalMoves.add(piece.getPositionAfterMove(Move.RIGHT));
         }
-        
+
         return legalMoves.size() == 0 ? null : legalMoves.toArray(new Position[legalMoves.size()]);
-    }      
-    
-    public boolean isLegalMove(Piece piece, Position newPosition) {
-        boolean legal = false;
+    }
+
+    public boolean isPossibleMove(Piece piece, Position newPosition) {
+        boolean possible = false;
         if (board.isLegalPosition(newPosition) && board.isPositionEmpty(newPosition)) {
             if (newPosition.equals(piece.getPositionAfterMove(Move.LEFT)) ||
-                    newPosition.equals(piece.getPositionAfterMove(Move.RIGHT)) ||
-                        newPosition.equals(piece.getPositionAfterMove(Move.LEFTJUMP)) ||
-                            newPosition.equals(piece.getPositionAfterMove(Move.RIGHTJUMP))) {
+                    newPosition.equals(piece.getPositionAfterMove(Move.RIGHT))) {
+                possible = true;
+            } else if (newPosition.equals(piece.getPositionAfterMove(Move.LEFTJUMP)) ||
+                    newPosition.equals(piece.getPositionAfterMove(Move.RIGHTJUMP))) {
+                Piece eatenPiece = board.getPieceByPosition(new Position((piece.getPosition().getX() + newPosition.getX()) / 2,
+                        (piece.getPosition().getY() + newPosition.getY()) / 2));
+                if (eatenPiece != null && eatenPiece.getPlayer().getColor() != piece.getPlayer().getColor()) {
+                    possible = true;
+                }
+            }
+        }
+        return possible;
+    }
+
+    public boolean isLegalMove(Piece piece, Position newPosition) {
+        boolean legal = false;
+        if (isPossibleMove(piece, newPosition)) {
+            if (forceJump(piece.getPlayer())) {
                 if (isJump(piece, newPosition)) {
-                    Piece eatenPiece = board.getPieceByPosition(new Position((piece.getPosition().getX() + newPosition.getX()) / 2,
-                            (piece.getPosition().getY() + newPosition.getY()) / 2));
-                    if (eatenPiece != null) {
-                        if (eatenPiece.getPlayer().getColor() != piece.getPlayer().getColor()) {
-                            legal = true;
-                        }
-                    }
-                } else {
                     legal = true;
                 }
+            } else {
+                legal = true;
             }
         }
         return legal;

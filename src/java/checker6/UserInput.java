@@ -18,4 +18,5 @@ public class UserInput {
     public Position getPosition() {
         return position;
     }
+
 }
