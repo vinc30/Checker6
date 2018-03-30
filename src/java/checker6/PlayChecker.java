@@ -87,7 +87,7 @@ public class PlayChecker {
                     if (validNum) {
                         Position[] legalMoves = getLegalMoves(player.getPieces(serialNum));
                         if (legalMoves != null) {
-                            System.out.printf(player.getBoard().toString(player.getBoard().toString(legalMoves), player.getPieces(serialNum).getPosition()));
+                            System.out.print(player.getBoard().toString(player.getBoard().toString(legalMoves), player.getPieces(serialNum).getPosition()));
                         } else {
                             System.out.print(player.getBoard().toString(player.getPieces(serialNum).getPosition()));
                         }
@@ -98,7 +98,8 @@ public class PlayChecker {
                                 Position[] legalMoves = getLegalMoves(piece);
                                 if (legalMoves != null) {
                                     for (Position legalMove : legalMoves) {
-                                        stringBuilder.append(legalMove.toString() + " ");
+                                        stringBuilder.append(legalMove.toString());
+                                        stringBuilder.append(" ");
                                     }
                                     stringBuilder.append(",");
                                 }
@@ -149,31 +150,36 @@ public class PlayChecker {
     }
 
     public int getNumberOfLegalMoves(Player player) {
-        int totalLegalMoves = 0;
+        return getLegalActions(player) == null ? 0 : getLegalActions(player).length;
+    }
+
+    public Action[] getLegalActions(Player player) {
+
+        ArrayList<Action> legalActions = new ArrayList<>();
         for (Piece piece : player.getPieces()) {
             if (piece != null) {
                 Position[] legalMoves = getLegalMoves(piece);
                 if (legalMoves != null) {
-                    totalLegalMoves += legalMoves.length;
+                    for (Position position : legalMoves) {
+                        legalActions.add(new Action(piece, position));
+                    }
                 }
             }
         }
-        return totalLegalMoves;
+        return legalActions.size() == 0 ? null : legalActions.toArray(new Action[legalActions.size()]);
     }
 
     public boolean forceJump(Player player) {
 
-        boolean forced = false;
         for (Piece piece : player.getPieces()) {
             if (piece != null) {
                 if (isPossibleMove(piece, piece.getPositionAfterMove(Move.LEFTJUMP)) ||
                         isPossibleMove(piece, piece.getPositionAfterMove(Move.RIGHTJUMP))) {
-                    forced = true;
-                    return forced;
+                    return true;
                 }
             }
         }
-        return forced;
+        return false;
     }
 
     public boolean isJump(Piece piece, Position newPosition) {
