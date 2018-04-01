@@ -14,6 +14,10 @@ public class Position {
         this(-1, -1);
     }
 
+    public Position(Position position) {
+        this(position.getX(), position.getY());
+    }
+
     public int getX() {
         return x;
     }

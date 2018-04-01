@@ -23,6 +23,7 @@ public class CheckerBoard {
             }
         }
     }
+
     static {
         INITIAL_POSITIONS = new Position[2][BOARD_SIZE];
         INITIAL_POSITIONS[0][0] = new Position(0,1);
@@ -40,7 +41,7 @@ public class CheckerBoard {
         INITIAL_POSITIONS[1][5] = new Position(5,4);
     }
 
-    public void putPiece(Piece piece) {
+    private void putPiece(Piece piece) {
         Position position = piece.getPosition();
         if (isPositionEmpty(position)) {
             board[position.getX()][position.getY()] = piece;
@@ -51,12 +52,18 @@ public class CheckerBoard {
     
     public void putPiece(Piece... pieces) {
         for (Piece piece : pieces) {
-            putPiece(piece);
+            if (piece != null) {
+                putPiece(piece);
+            }
         }
     }
     
     public Piece getPieceByPosition(Position position) {
         return board[position.getX()][position.getY()];
+    }
+
+    public Piece getPieceByPosition(int i, int j) {
+        return board[i][j];
     }
 
     public boolean isPositionEmpty(Position position) {
@@ -91,7 +98,7 @@ public class CheckerBoard {
         for (int i = 0; i < BOARD_SIZE; i ++) {
             boardStatus.append(String.format("%d|", i));
             for (int j = 0; j < BOARD_SIZE; j ++) {
-                boardStatus.append((board[i][j] == null ? "   " : String.format("%d%s ", board[i][j].getSerialNum(), board[i][j].toString())) + "|");
+                boardStatus.append((board[i][j] == null ? "   " : String.format("%d%s ", board[i][j].getSerialNum(), board[i][j].toString()))).append("|");
             }
             boardStatus.append("\n");
             if (i != BOARD_SIZE - 1) {

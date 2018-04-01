@@ -6,24 +6,32 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 public class PlayChecker {
-    
+
+    private static final int SEARCH_DEPTH_LIMIT = 10;
+
     public static void main(String[] args) {
 
         PlayChecker game = new PlayChecker();
 
         // to-do: Let user choose color
+        // to-do: Let user set AI level
+        // to-do: GUI
+
         Player firstPlayer = game.getPlayer(Color.LIGHT);
         Player secondPlayer = game.getPlayer(Color.DARK);
 
         while (!game.gameEnded()) {
             if (game.getNumberOfLegalMoves(firstPlayer) > 0) {
                 game.move(firstPlayer);
+                System.out.print(game.getBoard().toString());
             } 
             if (game.getNumberOfLegalMoves(secondPlayer) > 0) {
                 game.move(secondPlayer);
+                System.out.print(game.getBoard().toString());
             }
         }
 
+        System.out.print("GAME OVER\n");
         System.out.print(game.getBoard().toString());
         System.out.printf("Winner: %s\n", game.getResult());
     }
@@ -31,14 +39,21 @@ public class PlayChecker {
     private CheckerBoard board;
     private Player playerLight;
     private Player playerDark;
-    
-    public PlayChecker() {
+
+    private PlayChecker() {
         board = new CheckerBoard();
-        playerLight = new Player(board, Color.LIGHT);
-        playerDark = new Player(board, Color.DARK);
+        playerLight = new Player(board, Color.LIGHT, true);
+        playerDark = new Player(board, Color.DARK, false);  // this is AI
         board.putPiece(playerLight.getPieces());
         board.putPiece(playerDark.getPieces());
-        
+    }
+
+    private PlayChecker(PlayChecker game) {
+        board = new CheckerBoard();
+        playerLight = new Player(board, game.getPlayer(Color.LIGHT));
+        playerDark = new Player(board, game.getPlayer(Color.DARK));
+        board.putPiece(playerLight.getPieces());
+        board.putPiece(playerDark.getPieces());
     }
 
     public String getResult() {
@@ -49,19 +64,95 @@ public class PlayChecker {
             "DARK" : "LIGHT";
     }
 
-    public void move(Player player) {
-        
-        UserInput input = getValidInput(player);
-        if (input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.LEFTJUMP)) ||
-                input.getPosition().equals(player.getPieces()[input.getSerialNum()].getPositionAfterMove(Move.RIGHTJUMP))) {
-            Piece eatenPiece = board.getPieceByPosition(new Position((player.getPieces()[input.getSerialNum()].getPosition().getX() + input.getPosition().getX()) / 2,
-                    (player.getPieces()[input.getSerialNum()].getPosition().getY() + input.getPosition().getY()) / 2));
+    private void move(Player player) {
+        Action input = new Action();
+        if (player.isHuman()) {
+            input = getValidInput(player);
+        } else {
+            input = alphaBetaSearch(this);
+        }
+        if (input.isJump()) {
+            Piece eatenPiece = board.getPieceByPosition(new Position((input.getPiece().getPosition().getX() + input.getNewPosition().getX()) / 2,
+                    (input.getPiece().getPosition().getY() + input.getNewPosition().getY()) / 2));
             eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
         }
-        player.updatePiece(input.getSerialNum(), input.getPosition());
+        player.updatePiece(input.getPiece().getSerialNum(), input.getNewPosition());
     }
-    
-    private UserInput getValidInput(Player player) {
+
+    private Action alphaBetaSearch(PlayChecker game) {
+        UtilityAndAction result = new UtilityAndAction();
+
+        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, SEARCH_DEPTH_LIMIT);
+        return result.getAction();
+    }
+
+    private UtilityAndAction maxValue(PlayChecker game, double alpha, double beta, int searchDepthLimit) {
+
+        if (game.gameEnded() || searchDepthLimit == 0) {
+            return new UtilityAndAction(null, Utility.calculateUtility(game));
+        }
+        double currentMax = Double.NEGATIVE_INFINITY;
+        double currentAlpha = alpha;
+        Action chosenAction = new Action();
+
+        if (game.getLegalActions(game.getPlayer(Color.DARK)) != null ) {
+            for (Action legalAction : game.getLegalActions(game.getPlayer(Color.DARK))) {
+                UtilityAndAction currentTry = minValue(renderNewStatus(game, legalAction), currentAlpha, beta, searchDepthLimit - 1);
+                if (currentMax < currentTry.getUtility()) {
+                    currentMax = currentTry.getUtility();
+                    chosenAction = legalAction;
+                }
+                if (currentMax >= beta) {
+                    return new UtilityAndAction(chosenAction, currentMax);
+                }
+                currentAlpha = Math.max(currentAlpha, currentMax);
+            }
+        } else {
+            throw new IllegalArgumentException("game already ended");
+        }
+        return new UtilityAndAction(chosenAction, currentMax);
+    }
+
+    private UtilityAndAction minValue(PlayChecker game, double alpha, double beta, int searchDepthLimit) {
+
+        if (game.gameEnded() || searchDepthLimit == 0) {
+            return new UtilityAndAction(null, Utility.calculateUtility(game));
+        }
+
+        double currentMin = Double.POSITIVE_INFINITY;
+        double currentBeta = beta;
+        Action chosenAction = new Action();
+
+        if (game.getLegalActions(game.getPlayer(Color.LIGHT)) != null) {
+            for (Action legalAction : game.getLegalActions(game.getPlayer(Color.LIGHT))) {
+                UtilityAndAction currentTry = maxValue(renderNewStatus(game, legalAction), alpha, currentBeta, searchDepthLimit - 1);
+                if (currentTry.getUtility() < currentMin) {
+                    currentMin = currentTry.getUtility();
+                    chosenAction = legalAction;
+                }
+                if (currentMin <= alpha) {
+                    return new UtilityAndAction(chosenAction, currentMin);
+                }
+                currentBeta = Math.min(currentBeta, currentMin);
+            }
+        } else {
+            throw new IllegalArgumentException("game already ended");
+        }
+        return new UtilityAndAction(chosenAction, currentMin);
+    }
+
+    public PlayChecker renderNewStatus(PlayChecker game, Action action) {
+        PlayChecker newGame = new PlayChecker(game);
+        if (action.isJump()) {
+            Piece eatenPiece = newGame.getBoard().getPieceByPosition(new Position((action.getPiece().getPosition().getX() + action.getNewPosition().getX()) / 2,
+                    (action.getPiece().getPosition().getY() + action.getNewPosition().getY()) / 2));
+            eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
+        }
+        newGame.getPlayer(action.getPiece().getPlayer().getColor()).updatePiece(action.getPiece().getSerialNum(), action.getNewPosition());
+        return newGame;
+    }
+
+    private Action getValidInput(Player player) {
         boolean validNum = false;
         boolean validPos = false;
         int serialNum = -1;
@@ -95,11 +186,11 @@ public class PlayChecker {
                         StringBuilder stringBuilder = new StringBuilder();
                         for (Piece piece : player.getPieces()) {
                             if (piece != null) {
+                                stringBuilder.append(piece.getSerialNum()).append(":");
                                 Position[] legalMoves = getLegalMoves(piece);
                                 if (legalMoves != null) {
                                     for (Position legalMove : legalMoves) {
-                                        stringBuilder.append(legalMove.toString());
-                                        stringBuilder.append(" ");
+                                        stringBuilder.append(legalMove.toString()).append(" ");
                                     }
                                     stringBuilder.append(",");
                                 }
@@ -141,7 +232,7 @@ public class PlayChecker {
                 System.out.printf("OMG it's an IOException(read input): %s%n", ioe.getMessage());
             }
         }
-        return new UserInput(serialNum, newPosition);
+        return new Action(player.getPieces(serialNum), newPosition, isJump(player.getPieces(serialNum), newPosition));
     }
 
     public boolean gameEnded() {
@@ -149,11 +240,11 @@ public class PlayChecker {
             || getNumberOfLegalMoves(playerDark) == 0 || getNumberOfLegalMoves(playerLight) == 0;
     }
 
-    public int getNumberOfLegalMoves(Player player) {
+    private int getNumberOfLegalMoves(Player player) {
         return getLegalActions(player) == null ? 0 : getLegalActions(player).length;
     }
 
-    public Action[] getLegalActions(Player player) {
+    private Action[] getLegalActions(Player player) {
 
         ArrayList<Action> legalActions = new ArrayList<>();
         for (Piece piece : player.getPieces()) {
@@ -161,7 +252,7 @@ public class PlayChecker {
                 Position[] legalMoves = getLegalMoves(piece);
                 if (legalMoves != null) {
                     for (Position position : legalMoves) {
-                        legalActions.add(new Action(piece, position));
+                        legalActions.add(new Action(piece, position, isJump(piece, position)));
                     }
                 }
             }
@@ -169,7 +260,7 @@ public class PlayChecker {
         return legalActions.size() == 0 ? null : legalActions.toArray(new Action[legalActions.size()]);
     }
 
-    public boolean forceJump(Player player) {
+    private boolean forceJump(Player player) {
 
         for (Piece piece : player.getPieces()) {
             if (piece != null) {
@@ -182,12 +273,12 @@ public class PlayChecker {
         return false;
     }
 
-    public boolean isJump(Piece piece, Position newPosition) {
+    private boolean isJump(Piece piece, Position newPosition) {
         return piece.getPositionAfterMove(Move.LEFTJUMP).equals(newPosition) ||
             piece.getPositionAfterMove(Move.RIGHTJUMP).equals(newPosition);
     }
 
-    public Position[] getLegalMoves(Piece piece) {
+    private Position[] getLegalMoves(Piece piece) {
         boolean forceJump = false;
         ArrayList<Position> legalMoves = new ArrayList<>();
         if (isLegalMove(piece, piece.getPositionAfterMove(Move.LEFTJUMP))) {
@@ -212,7 +303,7 @@ public class PlayChecker {
         return legalMoves.size() == 0 ? null : legalMoves.toArray(new Position[legalMoves.size()]);
     }
 
-    public boolean isPossibleMove(Piece piece, Position newPosition) {
+    private boolean isPossibleMove(Piece piece, Position newPosition) {
         boolean possible = false;
         if (board.isLegalPosition(newPosition) && board.isPositionEmpty(newPosition)) {
             if (newPosition.equals(piece.getPositionAfterMove(Move.LEFT)) ||
@@ -230,7 +321,7 @@ public class PlayChecker {
         return possible;
     }
 
-    public boolean isLegalMove(Piece piece, Position newPosition) {
+    private boolean isLegalMove(Piece piece, Position newPosition) {
         boolean legal = false;
         if (isPossibleMove(piece, newPosition)) {
             if (forceJump(piece.getPlayer())) {
@@ -247,7 +338,7 @@ public class PlayChecker {
     public CheckerBoard getBoard() {
         return board;
     }
-    
+
     public Player getPlayer(Color color) {
         return color == Color.LIGHT ? playerLight : playerDark;
     }

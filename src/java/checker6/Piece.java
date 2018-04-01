@@ -18,6 +18,10 @@ public class Piece {
         this.serialNum = -1;
     }
 
+    public Piece(Piece piece, Player player) {
+        this(piece.getPosition(), player, piece.getSerialNum());
+    }
+
     public Position getPosition() {
         return position;
     }

@@ -1,36 +1,44 @@
 package checker6;
 
 
+import java.util.ArrayList;
+
 public class Player {
     private Piece[] holdingPiece;
     private Color color;
     private int remainingPieces;
     private CheckerBoard board;
+    private boolean human;
 
-    public Player(CheckerBoard board, Color color) {
+    public Player(CheckerBoard board, Color color, boolean human) {
         this.board = board;
         this.color = color;
-        holdingPiece = new Piece[board.getBoardSize()];
+        this.human = human;
+        holdingPiece = new Piece[CheckerBoard.getBoardSize()];
         int colorNumber = (color == Color.LIGHT ? 0 : 1);
-        Position[] initialPosition = board.getInitialPositions()[colorNumber];
-        for (int i = 0; i < board.getBoardSize(); i ++) {
+        Position[] initialPosition = CheckerBoard.getInitialPositions()[colorNumber];
+        for (int i = 0; i < CheckerBoard.getBoardSize(); i ++) {
             holdingPiece[i] = new Piece(initialPosition[i], this, i);
         }
         remainingPieces = initialPosition.length;
     }
-    public Piece[] getPieces() {
-        return holdingPiece;
-    }
 
-    public Piece getPieces(Position position) {
-        Piece piece = new Piece();
-        for (Piece p : holdingPiece) {
-            if (p != null && p.getPosition().equals(position)) {
-                piece = p;
-                break;
+    public Player(CheckerBoard board, Player player) {
+        this.board = board;
+        this.color = player.getColor();
+        this.human = player.isHuman();
+        holdingPiece = new Piece[CheckerBoard.getBoardSize()];
+        for (Piece piece : player.getPieces()) {
+            if (piece != null) {
+                Piece insertingPiece = new Piece(piece.getPosition(), this, piece.getSerialNum());
+                holdingPiece[insertingPiece.getSerialNum()] = insertingPiece;
             }
         }
-        return piece;
+        remainingPieces = player.getRemainingPieces();
+    }
+
+    public Piece[] getPieces() {
+        return holdingPiece;
     }
 
     public Piece getPieces(int idx) {
@@ -59,6 +67,19 @@ public class Player {
             throw new IllegalArgumentException("updatePiece(): Moving eaten piece");
         }
     }
+    /*
+    public Position[] getAllPiecesPosition() {
+
+        ArrayList<Position> positions = new ArrayList<>();
+
+        for (Piece piece : holdingPiece) {
+            if (piece != null) {
+                positions.add(piece.getPosition());
+            }
+        }
+        return positions.size() == 0 ? null : positions.toArray(new Position[positions.size()]);
+    }
+    */
 
     public Color getColor() {
         return color;
@@ -67,4 +88,9 @@ public class Player {
     public CheckerBoard getBoard() {
         return board;
     }
+
+    public boolean isHuman() {
+        return human;
+    }
+
 }
