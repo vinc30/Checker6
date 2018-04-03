@@ -37,6 +37,14 @@ public class Player {
         remainingPieces = player.getRemainingPieces();
     }
 
+    public Player() {
+        this.board = null;
+        this.color = Color.DARK;
+        this.human = false;
+        holdingPiece = null;
+        remainingPieces = -1;
+    }
+
     public Piece[] getPieces() {
         return holdingPiece;
     }

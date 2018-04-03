@@ -7,18 +7,34 @@ import java.io.InputStreamReader;
 
 public class PlayChecker {
 
-    private static final int SEARCH_DEPTH_LIMIT = 10;
+    private static int difficulty;
 
     public static void main(String[] args) {
 
         PlayChecker game = new PlayChecker();
+        int playerOrder = -1;
+
+        Player firstPlayer = new Player();
+        Player secondPlayer = new Player();
 
         // to-do: Let user choose color
         // to-do: Let user set AI level
         // to-do: GUI
+        System.out.print("Type 1 or 2 to choose playing first or second: ");
+        playerOrder = Utility.getPlayerOrder();
+        if (playerOrder == 1) {
+            firstPlayer = game.getPlayer(Color.LIGHT);
+            secondPlayer = game.getPlayer(Color.DARK);
+        } else if (playerOrder == 2) {
+            firstPlayer = game.getPlayer(Color.DARK);
+            secondPlayer = game.getPlayer(Color.LIGHT);
+        }
 
-        Player firstPlayer = game.getPlayer(Color.LIGHT);
-        Player secondPlayer = game.getPlayer(Color.DARK);
+        System.out.print("Type 1, 2 or 3 to choose the level of difficulty: ");
+        difficulty = Utility.getDifficulty();
+
+        System.out.print("Game Start\n");
+        System.out.print(game.getBoard().toString());
 
         while (!game.gameEnded()) {
             if (game.getNumberOfLegalMoves(firstPlayer) > 0) {
@@ -82,7 +98,12 @@ public class PlayChecker {
     private Action alphaBetaSearch(PlayChecker game) {
         UtilityAndAction result = new UtilityAndAction();
 
-        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, SEARCH_DEPTH_LIMIT);
+        System.out.print("AI player's move: ");
+        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, difficulty);
+        if (result.getAction() != null) {
+            System.out.printf("Move #%d to %s", result.getAction().getPiece().getSerialNum(), result.getAction().getNewPosition());
+        }
+        System.out.print("\n");
         return result.getAction();
     }
 
@@ -158,7 +179,6 @@ public class PlayChecker {
         int serialNum = -1;
         Position newPosition = new Position();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print(player.getBoard().toString());
 
         while (!validNum || !validPos) {
             if (!validNum) {

@@ -1,12 +1,17 @@
 package checker6;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 public class Utility {
     
     private final static int NUMBER_OF_CHAR_PER_LINE = 27;
     private final static double WIN_UTILITY_VALUE = 100d;
     private final static double LOSE_UTILITY_VALUE = -100d;
     private final static double DRAW_UTILITY_VALUE = 0d;
+    private static final int SEARCH_DEPTH_LIMIT = 19;
     
     public static boolean isInteger(String s) {
         return isInteger(s, 10);
@@ -26,6 +31,65 @@ public class Utility {
 
     public static int positionToIndex(Position position) {
         return NUMBER_OF_CHAR_PER_LINE * (position.getX() * 2 + 2) + (4 + position.getY() * 4);
+    }
+
+    public static int getPlayerOrder() {
+        int playerOrder = -1;
+        boolean gotOrder = false;
+        try {
+            BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+            while (!gotOrder) {
+                String inputString = input.readLine();
+                if (Utility.isInteger(inputString)) {
+                    playerOrder = Integer.parseInt(inputString);
+                    if (playerOrder == 1 || playerOrder == 2) {
+                        gotOrder = true;
+                    } else {
+                        System.out.print("Invalid number: please enter 1 or 2\n");
+                    }
+                } else {
+                    System.out.print("Invalid input: please enter 1 or 2%n");
+                }
+            }
+        } catch (IOException ioe) {
+            System.out.printf("OMG it's an IOException(read input): %s%n", ioe.getMessage());
+        }
+        return playerOrder;
+    }
+
+    public static int getDifficulty() {
+        int difficulty = -1;
+        boolean gotDifficulty = false;
+        try {
+            BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+            while (!gotDifficulty) {
+                String inputString = input.readLine();
+                if (Utility.isInteger(inputString)) {
+                    difficulty = Integer.parseInt(inputString);
+                    if (difficulty == 1 || difficulty == 2 || difficulty == 3) {
+                        switch (difficulty) {
+                            case 1:
+                                difficulty = SEARCH_DEPTH_LIMIT / 3;
+                                break;
+                            case 2:
+                                difficulty = SEARCH_DEPTH_LIMIT / 2;
+                                break;
+                            case 3:
+                                difficulty = SEARCH_DEPTH_LIMIT;
+                                break;
+                        }
+                        gotDifficulty = true;
+                    } else {
+                        System.out.print("Invalid number: please enter 1, 2 or 3\n");
+                    }
+                } else {
+                    System.out.print("Invalid input: please enter 1, 2 or 3%n");
+                }
+            }
+        } catch (IOException ioe) {
+            System.out.printf("OMG it's an IOException(read input): %s%n", ioe.getMessage());
+        }
+        return difficulty;
     }
 
     public static double calculateUtility(PlayChecker game) {
