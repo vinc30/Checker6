@@ -58,7 +58,7 @@ public class Chessboard_View extends JPanel {
      */
     @Override
     public void paint(Graphics g){
-        // System.out.println("paint");
+
         Graphics2D g2d = (Graphics2D) g;
         this.drawBoard(g2d, clicked_x_position, clicked_y_position); // draw empty board
 
@@ -67,19 +67,8 @@ public class Chessboard_View extends JPanel {
         if (game_controller.gameEnded()) {
             game_controller.gameOver();
         } else {
-            // String message = game_controller.getPlayerForThisTurn().toString() + "'s turn";
             game_controller.updateMessage(game_controller.message);
         }
-//        String checkmate_or_stalemate = game_controller.isCheckmateOrStalemate(); // check checkmate or stalemate
-//        if(checkmate_or_stalemate == null) { // neither checkmate nor stalemate
-//            game_controller.checkUserClick(g2d, clicked_x_coord, clicked_y_coord); // check user mouse click
-//        }
-//        else if (checkmate_or_stalemate.equals("checkmate")){ // checkmate
-//            game_controller.gameIsOver(checkmate_or_stalemate);
-//        }
-//        else { // stalemate
-//            game_controller.gameIsOver(checkmate_or_stalemate);
-//        }
     }
 
     /**
@@ -192,11 +181,10 @@ public class Chessboard_View extends JPanel {
             count++;
         }
         /*
-         * draw pieces
+         * draw each piece
          */
         for(i = 0; i < this.board.getHeight(); i++){
             for(j = 0; j < this.board.getWidth(); j++){
-                /* draw piece */
                 p = this.board.getPieceByPosition(j, i);    // get piece at current canvas coordinate (left-top coordinate system)
                 if(p != null) {
                     drawPiece(g2d, p);

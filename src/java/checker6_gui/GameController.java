@@ -8,6 +8,7 @@ package checker6_gui;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Game Controller
@@ -20,11 +21,19 @@ public class GameController {
 
     protected Player playerLight;
     protected Player playerDark;
-    private static int DEFAULT_DIFFICULTY = 18;
+    private static int DEFAULT_DIFFICULTY = 16;
     private int difficulty;
     private int playOrder = 1;
+    private static boolean VERBOSE = true;
 
     protected String message;    // game message
+
+    /**
+     * set VERBOSE be true to see the information during alpha-beta search
+     */
+    public static boolean isVerbose() {
+        return VERBOSE;
+    }
 
     /**
      * Constructor: initialize game controller
@@ -209,8 +218,6 @@ public class GameController {
         return legal;
     }
 
-
-
     /**
      * Move player's piece to unoccupied tile if valid
      * @param panel
@@ -250,19 +257,29 @@ public class GameController {
 
     private Action alphaBetaSearch(GameController game) {
         UtilityAndAction result = new UtilityAndAction();
+        AtomicReference<Integer> searchCounter = new AtomicReference<>();
+        searchCounter.set(0);
 
-        System.out.print("AI player's move: %n");
-        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, difficulty);
-        if (result.getAction() != null) {
-            System.out.printf("Move %s to %s", result.getAction().getPiece().getPosition(), result.getAction().getNewPosition());
+        if (isVerbose()) {
+            System.out.print("AI player's move: %n");
         }
-        System.out.print("\n");
+        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, difficulty, searchCounter);
+
+        if (isVerbose()) {
+            if (result.getAction() != null) {
+                System.out.printf("Move %s to %s", result.getAction().getPiece().getPosition(), result.getAction().getNewPosition());
+            }
+            System.out.print("\n");
+        }
         return result.getAction();
     }
 
-    private UtilityAndAction maxValue(GameController game, double alpha, double beta, int searchDepthLimit) {
+    private UtilityAndAction maxValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter) {
 
         if (game.gameEnded() || searchDepthLimit == 0) {
+            if (isVerbose()) {
+                System.out.printf("#%d ", searchCounter.get());
+            }
             return new UtilityAndAction(null, Utility.calculateUtility(game));
         }
         double currentMax = Double.NEGATIVE_INFINITY;
@@ -271,13 +288,16 @@ public class GameController {
 
         if (game.getLegalActions(game.getPlayer(PlayerColor.DARK)) != null ) {
             for (Action legalAction : game.getLegalActions(game.getPlayer(PlayerColor.DARK))) {
-                UtilityAndAction currentTry = minValue(renderNewStatus(game, legalAction), currentAlpha, beta, searchDepthLimit - 1);
+                searchCounter.set(searchCounter.get() + 1);
+                UtilityAndAction currentTry = minValue(renderNewStatus(game, legalAction), currentAlpha, beta, searchDepthLimit - 1, searchCounter);
                 if (currentMax < currentTry.getUtility()) {
                     currentMax = currentTry.getUtility();
                     chosenAction = legalAction;
                 }
                 if (currentMax >= beta) {
-                    System.out.printf("Pruning: max at %f (alpha: %f, beta: %f)\n", currentMax, currentAlpha, beta);
+                    if (isVerbose()) {
+                        System.out.printf("#%d Pruning: max at %f (alpha: %f, beta: %f)\n", searchCounter.get(), currentMax, currentAlpha, beta);
+                    }
                     return new UtilityAndAction(chosenAction, currentMax);
                 }
                 currentAlpha = Math.max(currentAlpha, currentMax);
@@ -288,9 +308,12 @@ public class GameController {
         return new UtilityAndAction(chosenAction, currentMax);
     }
 
-    private UtilityAndAction minValue(GameController game, double alpha, double beta, int searchDepthLimit) {
+    private UtilityAndAction minValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter) {
 
         if (game.gameEnded() || searchDepthLimit == 0) {
+            if (isVerbose()) {
+                System.out.printf("#%d ", searchCounter.get());
+            }
             return new UtilityAndAction(null, Utility.calculateUtility(game));
         }
 
@@ -300,13 +323,16 @@ public class GameController {
 
         if (game.getLegalActions(game.getPlayer(PlayerColor.LIGHT)) != null) {
             for (Action legalAction : game.getLegalActions(game.getPlayer(PlayerColor.LIGHT))) {
-                UtilityAndAction currentTry = maxValue(renderNewStatus(game, legalAction), alpha, currentBeta, searchDepthLimit - 1);
+                searchCounter.set(searchCounter.get() + 1);
+                UtilityAndAction currentTry = maxValue(renderNewStatus(game, legalAction), alpha, currentBeta, searchDepthLimit - 1, searchCounter);
                 if (currentTry.getUtility() < currentMin) {
                     currentMin = currentTry.getUtility();
                     chosenAction = legalAction;
                 }
                 if (currentMin <= alpha) {
-                    System.out.printf("Pruning: min at %f (alpha: %f, beta: %f)\n", currentMin, alpha, currentBeta);
+                    if (isVerbose()) {
+                        System.out.printf("#%d Pruning: min at %f (alpha: %f, beta: %f)\n", searchCounter.get(), currentMin, alpha, currentBeta);
+                    }
                     return new UtilityAndAction(chosenAction, currentMin);
                 }
                 currentBeta = Math.min(currentBeta, currentMin);
@@ -515,6 +541,5 @@ public class GameController {
     private boolean gameStarted() {
         return game_start;
     }
-
 
 }

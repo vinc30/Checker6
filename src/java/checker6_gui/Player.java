@@ -5,6 +5,19 @@ package checker6_gui;
  * Date: Apr 13 2018
  */
 
+/**
+ * The Player class holds information of each player, for the instance fields in Player
+ *
+ *     holdingPiece: fixed length array of the pieces holden by one player
+ *                   if a piece is eaten, it will be null in holdingPiece array
+ *     color: color of a player, where LIGHT is human player, DARK is AI player
+ *     remainingPieces: the number of remaining pieces of a player
+ *     board: the board where players are playing
+ *     human: boolean variable to indicate if this player is human
+ *     score: score is currently defined as the number of rival pieces captured
+ *     name: name of the player
+ *
+ */
 public class Player {
     private Piece[] holdingPiece;
     private PlayerColor color;
@@ -62,6 +75,13 @@ public class Player {
     public int getRemainingPieces() {
         return remainingPieces;
     }
+
+    /**
+     * if player A eat a piece of player B
+     * B will revoke gotEaten() and remove this piece from its
+     * holdingPiece[] and from the board
+     * @param pieceNum
+     */
     public void gotEaten(int pieceNum) {
         if (holdingPiece[pieceNum] != null) {
             board.removePiece(holdingPiece[pieceNum]);
@@ -72,6 +92,9 @@ public class Player {
         }
     }
 
+    /**
+     * assign a piece to new position and adjust the board coordinately
+     */
     public void updatePiece(int serialNum, Position newPosition) {
         if (holdingPiece[serialNum] != null) {
             Position oldPosition = holdingPiece[serialNum].getPosition();

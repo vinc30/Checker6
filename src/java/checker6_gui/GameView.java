@@ -42,7 +42,7 @@ public class GameView  extends JPanel{
      * @param tile_size this size of tile
      */
     public GameView(CheckerBoard board, int tile_size, Player playerLight, Player playerDark){
-        // super(new BorderLayout(board.width * tile_size + 500, board.height * tile_size));
+
         this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS)); // set layout for game view
 
         this.board = board;
@@ -65,7 +65,7 @@ public class GameView  extends JPanel{
     }
 
     /**
-     * Bing game controller to this game view
+     * Bind game controller to this game view
      * @param game_controller the game controller that we are going to use.
      */
     public void bindGameController(GameController game_controller){
@@ -102,6 +102,9 @@ public class GameView  extends JPanel{
         game_frame.add(this);        // draw canvas
     }
 
+    /**
+     * Let user choose to play first or not
+     */
     private void getPlayOrder() {
         boolean gotOrder = false;
         while (!gotOrder) {
@@ -126,7 +129,10 @@ public class GameView  extends JPanel{
         }
 
     }
-
+    /**
+     * Let user choose the level of difficulty. The difficulty is set by the search depth of
+     * alpha-beta search
+     */
     private void getDifficultyLevel() {
         boolean gotDifficulty = false;
         while (!gotDifficulty) {

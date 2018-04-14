@@ -51,7 +51,7 @@ public class Game{
         board.putPiece(playerDark.getPieces());
 
         GameView game_view = new GameView(board, 64, playerLight, playerDark); // initialize game view;
-        GameController game_controller = new GameController(board, game_view, playerLight, playerDark); // initialize game constroller;
+        GameController game_controller = new GameController(board, game_view, playerLight, playerDark); // initialize game controller;
 
         // init game
         Game game = new Game(board, game_controller, game_view, playerLight, playerDark);

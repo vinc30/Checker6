@@ -36,9 +36,7 @@ public class MenuView extends JPanel {
         this.setLayout(null); // use absolute layout
 
          /*
-          *
-          * Setup several buttons for menu
-          *
+          * Setup Start and Difficulty buttons for menu
           */
 
         // add start button
@@ -157,10 +155,9 @@ public class MenuView extends JPanel {
      * @param message        new message
      */
     public void drawMenu(String message){
+
         // update player1_score player2_score and message
-
         this.message = message;
-
         this.repaint(); // redraw the components
     }
 }
