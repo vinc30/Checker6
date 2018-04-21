@@ -90,16 +90,16 @@ public class GameView  extends JPanel{
         this.menu_view = new MenuView(this.menu_width, this.menu_height, this);
         this.add(this.menu_view/*, BorderLayout.LINE_END*/); // add menu view to game view
 
-        getPlayOrder();
-        getDifficultyLevel();
-
-        JFrame game_frame = new JFrame("Chess");  // init JFrame object
+        JFrame game_frame = new JFrame("Checker");  // init JFrame object
         game_frame.getContentPane().setPreferredSize(new Dimension(this.view_width, this.view_height));  // set height and width
         game_frame.setResizable(false);    // disable resizable
         game_frame.pack();
         game_frame.setVisible(true);       // set as visible
         game_frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE); // set close operation
         game_frame.add(this);        // draw canvas
+
+        getPlayOrder();
+        getDifficultyLevel();
     }
 
     /**
@@ -136,11 +136,11 @@ public class GameView  extends JPanel{
     private void getDifficultyLevel() {
         boolean gotDifficulty = false;
         while (!gotDifficulty) {
-            String difficultyLevel = (String)JOptionPane.showInputDialog(null, "What's the difficulty? esay/medium/hard");
+            String difficultyLevel = (String)JOptionPane.showInputDialog(null, "Which difficulty? esay/medium/hard/drunk");
             if (difficultyLevel != null && difficultyLevel.length() > 0){
                 switch (difficultyLevel){
                     case "easy":
-                        game_controller.setDifficulty(3);
+                        game_controller.setDifficulty(1);
                         gotDifficulty = true;
                         break;
                     case "medium":
@@ -148,10 +148,14 @@ public class GameView  extends JPanel{
                         gotDifficulty = true;
                         break;
                     case "hard":
-                        game_controller.setDifficulty(1);
+                        game_controller.setDifficulty(3);
                         gotDifficulty = true;
                         break;
-                    default:
+                    case "drunk":
+                        game_controller.setDifficulty(0);
+                        gotDifficulty = true;
+                        break;
+                     default:
                         JOptionPane.showMessageDialog(null, "Invalid difficulty: " + difficultyLevel);
                         break;
                 }
