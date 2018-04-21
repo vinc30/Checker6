@@ -8,6 +8,7 @@ package checker6_gui;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -21,7 +22,7 @@ public class GameController {
 
     protected Player playerLight;
     protected Player playerDark;
-    private static int DEFAULT_DIFFICULTY = 16;
+    private static int DEFAULT_DIFFICULTY = 15;
     private int difficulty;
     private int playOrder = 1;
     private static boolean VERBOSE = true;
@@ -60,11 +61,12 @@ public class GameController {
     }
 
     /**
-     * Game ends
+     * Game ends. That is, when a player has no piece on the board,
+     * or both players have no more move to perform.
      */
     public boolean gameEnded() {
         return playerLight.getRemainingPieces() == 0 || playerDark.getRemainingPieces() == 0
-                || getNumberOfLegalMoves(playerDark) == 0 || getNumberOfLegalMoves(playerLight) == 0;
+                || (getNumberOfLegalMoves(playerDark) == 0 && getNumberOfLegalMoves(playerLight) == 0);
     }
     public String getResult() {
         if (playerDark.getRemainingPieces() == playerLight.getRemainingPieces()) {
@@ -78,6 +80,9 @@ public class GameController {
         this.playOrder = order;
     }
 
+    /**
+     * The game is over, update menu view and show the winner
+     */
     public void gameOver(){
         if(!gameStarted()) // game already over
             return;
@@ -90,10 +95,20 @@ public class GameController {
 
     }
 
+    /**
+     * get number of legal moves for player in this turn
+     * @param player
+     * @return
+     */
     private int getNumberOfLegalMoves(Player player) {
         return getLegalActions(player) == null ? 0 : getLegalActions(player).length;
     }
 
+    /**
+     * Get all of the legal actions for player in this turn
+     * @param player
+     * @return
+     */
     private Action[] getLegalActions(Player player) {
 
         ArrayList<Action> legalActions = new ArrayList<>();
@@ -116,7 +131,7 @@ public class GameController {
      * @param piece the piece we want to move.
      * @return coordinate lists
      */
-    private ArrayList<Position> showPossibelMovesForPiece(Piece piece){
+    private ArrayList<Position> showPossibleMovesForPiece(Piece piece){
 
         boolean forceJump = false;
         ArrayList<Position> legalMoves = new ArrayList<>();
@@ -143,6 +158,11 @@ public class GameController {
         return legalMoves;
     }
 
+    /**
+     * Check if player is forced to make a jump ( or capture move) now
+     * @param player
+     * @return
+     */
     private boolean forceJump(Player player) {
 
         for (Piece piece : player.getPieces()) {
@@ -156,11 +176,22 @@ public class GameController {
         return false;
     }
 
+    /**
+     * Check if it's a jump (or capture) move for piece to move to newPosition
+     * @param piece
+     * @param newPosition
+     * @return
+     */
     private boolean isJump(Piece piece, Position newPosition) {
         return piece.getPositionAfterMove(Move.LEFTJUMP).equals(newPosition) ||
                 piece.getPositionAfterMove(Move.RIGHTJUMP).equals(newPosition);
     }
 
+    /**
+     * Get all of the positions of legal move for piece
+     * @param piece
+     * @return
+     */
     private Position[] getLegalMoves(Piece piece) {
         boolean forceJump = false;
         ArrayList<Position> legalMoves = new ArrayList<>();
@@ -186,6 +217,17 @@ public class GameController {
         return legalMoves.size() == 0 ? null : legalMoves.toArray(new Position[legalMoves.size()]);
     }
 
+    /**
+     * Check if moving piece to newPosition is possible
+     * Here, we define a possible move for a piece to be
+     * either move of the four basic move for this piece,
+     * that is, move diagonal left, move diagonal right,
+     * capture diagonal left, capture diagonal right.
+     *
+     * @param piece
+     * @param newPosition
+     * @return
+     */
     private boolean isPossibleMove(Piece piece, Position newPosition) {
         boolean possible = false;
         if (board.isLegalPosition(newPosition) && board.isPositionEmpty(newPosition)) {
@@ -204,6 +246,12 @@ public class GameController {
         return possible;
     }
 
+    /**
+     * Check if moving piece to newPosition is legal
+     * @param piece
+     * @param newPosition
+     * @return
+     */
     private boolean isLegalMove(Piece piece, Position newPosition) {
         boolean legal = false;
         if (isPossibleMove(piece, newPosition)) {
@@ -224,27 +272,81 @@ public class GameController {
      * @param newPosition     the new position to move to
      */
     private void movePlayerPieceToEmptyTileIfValid(JPanel panel, Position newPosition){
-        if (isPossibleMove(chosen_piece, newPosition)) {
-            if (isJump(chosen_piece, newPosition)) {
-                Piece eatenPiece = board.getPieceByPosition(new Position((chosen_piece.getPosition().getX() + newPosition.getX()) / 2,
-                        (chosen_piece.getPosition().getY() + newPosition.getY()) / 2));
-                eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
-                chosen_piece.getPlayer().incrementScore();
+        if (newPosition != null) {
+            if (isPossibleMove(chosen_piece, newPosition)) {
+                if (isJump(chosen_piece, newPosition)) {
+                    Piece eatenPiece = board.getPieceByPosition(new Position((chosen_piece.getPosition().getX() + newPosition.getX()) / 2,
+                            (chosen_piece.getPosition().getY() + newPosition.getY()) / 2));
+                    eatenPiece.getPlayer().gotEaten(eatenPiece.getSerialNum());
+                    chosen_piece.getPlayer().incrementScore();
+                }
+                chosen_piece.getPlayer().updatePiece(chosen_piece.getSerialNum(), newPosition);
             }
-            chosen_piece.getPlayer().updatePiece(chosen_piece.getSerialNum(), newPosition);
         }
 
         this.board.incrementTurns();
-        panel.repaint();
+        chosen_piece = null;
+
         updateMessage(getPlayerForThisTurn().toString() + "'s turn");
-        if (!gameEnded() && this.getPlayerForThisTurn() == playerDark) {
+        this.game_view.chessboard_view.repaint();
+
+        /**
+         * Ater human player moved, let AI move
+         */
+        if (!gameEnded() && this.getPlayerForThisTurn() == playerDark && getNumberOfLegalMoves(playerDark) != 0) {
             // AI's turn for moving
-            aiMove(panel);
+            Thread worker = aiMove(panel);
+            worker.start();
+
+            Thread worker2 = aiMoveAgainIfNeeded(panel, worker);
+            worker2.start();
+        }
+        /**
+         * If AI does not have any legal move, it forfeit this turn and let human
+         * player move again.
+         */
+        if (!gameEnded() && getPlayerForThisTurn() == playerDark && getNumberOfLegalMoves(playerDark) == 0) {
+            movePlayerPieceToEmptyTileIfValid(panel, null);
         }
     }
 
-    private void aiMove(JPanel panel) {
-        Thread aiThinking = new Thread(new Runnable() {
+    /**
+     * After AI player moved, if human player has no move to perform
+     * The human player forfeit for this round and let AI move again
+     * @param panel
+     * @param worker
+     * @return
+     */
+    private Thread aiMoveAgainIfNeeded(JPanel panel, Thread worker) {
+        Thread aiMoveAgain = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    worker.join();
+                } catch (InterruptedException ire) {
+                    System.out.print(ire.getMessage());
+                }
+
+                if (!gameEnded() && getNumberOfLegalMoves(playerLight) == 0) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ire) {
+                        System.out.print(ire.getMessage());
+                    }
+                    movePlayerPieceToEmptyTileIfValid(panel, null);
+                }
+            }
+        });
+        return aiMoveAgain;
+    }
+
+    /**
+     * AI player search for a move, a perform this move
+     * @param panel
+     * @return
+     */
+    private Thread aiMove(JPanel panel) {
+        Thread aiThinkAndMove = new Thread(new Runnable() {
             @Override
             public void run() {
                 Action aiAction = alphaBetaSearch(GameController.this);
@@ -252,19 +354,32 @@ public class GameController {
                 movePlayerPieceToEmptyTileIfValid(panel, aiAction.getNewPosition());
             }
         });
-        aiThinking.start();
+        return aiThinkAndMove;
     }
 
+    /**
+     * Apply alpha-beta search algorithm for AI player
+     * on current game statue
+     * @param game
+     * @return
+     */
     private Action alphaBetaSearch(GameController game) {
         UtilityAndAction result = new UtilityAndAction();
         AtomicReference<Integer> searchCounter = new AtomicReference<>();
+        AtomicReference<Integer> pruningCounter = new AtomicReference<>();
         searchCounter.set(0);
+        pruningCounter.set(0);
 
         if (isVerbose()) {
-            System.out.print("AI player's move: %n");
+            System.out.print("AI player's move: \n");
         }
-        result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, difficulty, searchCounter);
-
+        if (difficulty != 0) {
+            result = maxValue(game, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, difficulty, searchCounter, pruningCounter);
+        } else {
+            Random random = new Random();
+            Action[] actions = getLegalActions(playerDark);
+            result = new UtilityAndAction(actions[random.nextInt(actions.length)], 0);
+        }
         if (isVerbose()) {
             if (result.getAction() != null) {
                 System.out.printf("Move %s to %s", result.getAction().getPiece().getPosition(), result.getAction().getNewPosition());
@@ -274,11 +389,21 @@ public class GameController {
         return result.getAction();
     }
 
-    private UtilityAndAction maxValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter) {
+    /**
+     * max function in the MinMax algorithm
+     * @param game
+     * @param alpha
+     * @param beta
+     * @param searchDepthLimit
+     * @param searchCounter
+     * @param pruningCounter
+     * @return
+     */
+    private UtilityAndAction maxValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter, AtomicReference<Integer> pruningCounter) {
 
-        if (game.gameEnded() || searchDepthLimit == 0) {
+        if (game.gameEnded() || searchDepthLimit == 0 || game.getNumberOfLegalMoves(game.getPlayer(PlayerColor.DARK)) == 0) {
             if (isVerbose()) {
-                System.out.printf("#%d ", searchCounter.get());
+                System.out.printf("depth: %d, pruned: %d, nodes: #%d ", difficulty - searchDepthLimit, pruningCounter.get(), searchCounter.get());
             }
             return new UtilityAndAction(null, Utility.calculateUtility(game));
         }
@@ -289,15 +414,16 @@ public class GameController {
         if (game.getLegalActions(game.getPlayer(PlayerColor.DARK)) != null ) {
             for (Action legalAction : game.getLegalActions(game.getPlayer(PlayerColor.DARK))) {
                 searchCounter.set(searchCounter.get() + 1);
-                UtilityAndAction currentTry = minValue(renderNewStatus(game, legalAction), currentAlpha, beta, searchDepthLimit - 1, searchCounter);
+                UtilityAndAction currentTry = minValue(renderNewStatus(game, legalAction), currentAlpha, beta, searchDepthLimit - 1, searchCounter, pruningCounter);
                 if (currentMax < currentTry.getUtility()) {
                     currentMax = currentTry.getUtility();
                     chosenAction = legalAction;
                 }
                 if (currentMax >= beta) {
-                    if (isVerbose()) {
-                        System.out.printf("#%d Pruning: max at %f (alpha: %f, beta: %f)\n", searchCounter.get(), currentMax, currentAlpha, beta);
-                    }
+                    pruningCounter.set(pruningCounter.get() + 1);
+//                    if (isVerbose()) {
+//                        System.out.printf("depth: %d, node#%d Pruning: max at %f (alpha: %f, beta: %f)\n",difficulty - searchDepthLimit, searchCounter.get(), currentMax, currentAlpha, beta);
+//                    }
                     return new UtilityAndAction(chosenAction, currentMax);
                 }
                 currentAlpha = Math.max(currentAlpha, currentMax);
@@ -308,11 +434,21 @@ public class GameController {
         return new UtilityAndAction(chosenAction, currentMax);
     }
 
-    private UtilityAndAction minValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter) {
+    /**
+     * min function in the MinMax algorithm
+     * @param game
+     * @param alpha
+     * @param beta
+     * @param searchDepthLimit
+     * @param searchCounter
+     * @param pruningCounter
+     * @return
+     */
+    private UtilityAndAction minValue(GameController game, double alpha, double beta, int searchDepthLimit, AtomicReference<Integer> searchCounter, AtomicReference<Integer> pruningCounter) {
 
-        if (game.gameEnded() || searchDepthLimit == 0) {
+        if (game.gameEnded() || searchDepthLimit == 0 || game.getNumberOfLegalMoves(game.getPlayer(PlayerColor.LIGHT)) == 0) {
             if (isVerbose()) {
-                System.out.printf("#%d ", searchCounter.get());
+                System.out.printf("depth: %d, pruned: %d, nodes: #%d ", difficulty - searchDepthLimit, pruningCounter.get(), searchCounter.get());
             }
             return new UtilityAndAction(null, Utility.calculateUtility(game));
         }
@@ -324,15 +460,16 @@ public class GameController {
         if (game.getLegalActions(game.getPlayer(PlayerColor.LIGHT)) != null) {
             for (Action legalAction : game.getLegalActions(game.getPlayer(PlayerColor.LIGHT))) {
                 searchCounter.set(searchCounter.get() + 1);
-                UtilityAndAction currentTry = maxValue(renderNewStatus(game, legalAction), alpha, currentBeta, searchDepthLimit - 1, searchCounter);
+                UtilityAndAction currentTry = maxValue(renderNewStatus(game, legalAction), alpha, currentBeta, searchDepthLimit - 1, searchCounter, pruningCounter);
                 if (currentTry.getUtility() < currentMin) {
                     currentMin = currentTry.getUtility();
                     chosenAction = legalAction;
                 }
                 if (currentMin <= alpha) {
-                    if (isVerbose()) {
-                        System.out.printf("#%d Pruning: min at %f (alpha: %f, beta: %f)\n", searchCounter.get(), currentMin, alpha, currentBeta);
-                    }
+//                    if (isVerbose()) {
+//                        System.out.printf("depth: %d, node#%d Pruning: min at %f (alpha: %f, beta: %f)\n", difficulty - searchDepthLimit, searchCounter.get(), currentMin, alpha, currentBeta);
+//                    }
+                    pruningCounter.set(pruningCounter.get() + 1);
                     return new UtilityAndAction(chosenAction, currentMin);
                 }
                 currentBeta = Math.min(currentBeta, currentMin);
@@ -386,7 +523,7 @@ public class GameController {
             if (p != null) { // player clicked a piece; show its possible moves
                 if(p.getPlayer() == getPlayerForThisTurn()) { // player clicked his/her own piece
                     this.chosen_piece = p;       // save as chosen_piece
-                    this.game_view.chessboard_view.drawPossibleMovesForPiece(g2d, this.showPossibelMovesForPiece(p)); // draw possible moves
+                    this.game_view.chessboard_view.drawPossibleMovesForPiece(g2d, this.showPossibleMovesForPiece(p)); // draw possible moves
                 } else { // player clicked opponent's piece
                     this.chosen_piece = null;
                 }
@@ -396,7 +533,7 @@ public class GameController {
                         // that means  p == null, and player clicked a tile that is not occupied
                         this.movePlayerPieceToEmptyTileIfValid(this.game_view, newPosition);
                     } else {
-                        this.game_view.chessboard_view.drawPossibleMovesForPiece(g2d, this.showPossibelMovesForPiece(chosen_piece)); // draw possible moves
+                        this.game_view.chessboard_view.drawPossibleMovesForPiece(g2d, this.showPossibleMovesForPiece(chosen_piece)); // draw possible moves
                     }
                 }
             }
@@ -404,7 +541,7 @@ public class GameController {
     }
 
     /**
-     * Update game message
+     * Update game message on menu view
      * @param message
      */
     public void updateMessage(String message){
@@ -435,7 +572,7 @@ public class GameController {
 
         // this.chessboard_history_log = new Stack<Chessboard_Log>();   // init chessboard history log
         this.game_start = true; // start game
-        updateMessage("Have fun in game!!\n" + (playOrder == 1 ? playerLight.getName() : playerDark.getName()) + "'s turn");
+        updateMessage("Have fun!\n" + (playOrder == 1 ? playerLight.getName() : playerDark.getName()) + "'s turn");
 
         if (playOrder == 2) {
             this.board.incrementTurns();
@@ -530,10 +667,19 @@ public class GameController {
         return board;
     }
 
+    /**
+     * set the level of difficulty
+     * @param n
+     */
     public void setDifficulty(int n) {
-        this.difficulty /= n;
+        this.difficulty = n * DEFAULT_DIFFICULTY / 3;
     }
 
+    /**
+     * Get the player class of the color
+     * @param color
+     * @return
+     */
     public Player getPlayer(PlayerColor color) {
         return color == PlayerColor.DARK ? playerDark : playerLight;
     }
