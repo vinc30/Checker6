@@ -26,14 +26,14 @@ public class Utility {
         CheckerBoard board = game.getBoard();
         if (game.gameEnded()) {
             if (game.isVerbose()) {
-                System.out.print("Search ended. ");
+                System.out.print("Game ended. ");
             }
             switch (game.getResult()) {
                 case "DARK":
-                    utility = WIN_UTILITY_VALUE;
+                    utility = WIN_UTILITY_VALUE + 100 * game.getPlayer(PlayerColor.DARK).getRemainingPieces() - 100 * game.getPlayer(PlayerColor.LIGHT).getRemainingPieces();
                     break;
                 case "LIGHT":
-                    utility = LOSE_UTILITY_VALUE;
+                    utility = LOSE_UTILITY_VALUE + 100 * game.getPlayer(PlayerColor.DARK).getRemainingPieces() - 100 * game.getPlayer(PlayerColor.LIGHT).getRemainingPieces();
                     break;
                 case "DRAW":
                     utility = DRAW_UTILITY_VALUE;
@@ -70,12 +70,12 @@ public class Utility {
                     if (cursor != null) {
                         if (cursor.getPlayer().getColor() == PlayerColor.LIGHT) {
                             if (i >= safeAfter) {
-                                utility -= 20d;
+                                utility -= 25d;
                             } else {
                                 if (i == 0 || j == 0 || i == 5 || j == 5) {
                                     utility -= 5d;
                                 } else {
-                                    utility -= (getPieceBehind(board, cursor) * 5d);
+                                    utility -= (getPieceBehind(board, cursor) * 3d);
                                 }
                             }
                         } else {
@@ -85,7 +85,7 @@ public class Utility {
                                 if (i == 0 || j == 0 || i == 5 || j == 5) {
                                     utility += 5d;
                                 } else {
-                                    utility += (getPieceBehind(board, cursor) * 5d);
+                                    utility += (getPieceBehind(board, cursor) * 3d);
                                 }
                             }
                         }
